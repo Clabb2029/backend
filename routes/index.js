@@ -3,7 +3,10 @@ const userModel = require('../models/users');
 const agendaModel = require('../models/agenda')
 const reviewModel = require('../models/reviews')
 var router = express.Router();
-
+const dotenv = require('dotenv').config();
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const userModel = require('../models/users');
 // /* GET home page. */
 // router.get('/', function(req, res, next) {
 //   res.render('index', { title: 'Express' });
