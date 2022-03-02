@@ -1,4 +1,7 @@
 var express = require('express');
+const userModel = require('../models/users');
+const agendaModel = require('../models/agenda')
+const reviewModel = require('../models/reviews')
 var router = express.Router();
 const dotenv = require('dotenv').config();
 const jwt = require('jsonwebtoken');
@@ -12,7 +15,7 @@ const userModel = require('../models/users');
 
 // Création d'un compte 
 
-router.post('/signup', function(req, res, next) {
+router.post('/signup', async function(req, res, next) {
   var token = req.body.token;
   var pseudo = req.body.pseudo;
   var email = req.body.email;
@@ -41,23 +44,34 @@ router.post('/signin', function(req, res, next) {
   }
 })
 
-// Récuperation des profils users
-router.get('/users', function(req, res, next) {
-  var id = req.query.id;
+// Récuperation des profils users pour l'affichage sur ProfilScreen : 
+router.get('/users/:userID', async function(req, res, next) {
 
-  if(!id){
-    res.json({result: false})
+  var userid = await userModel.findById(req.params.userID)
+  
+  if(userid){
+    var userReviews = await userModel.findById(req.params.userID).populate('reviews').exec();
+    res.json({userInfo : userReviews, reviews: userReviews.reviews})
+    console.log(userReviews)
   } else {
-    res.json({result: true, user: [{
-      pseudo: 'loulou',
-      description: 'coucou !'
-    }]})
+    res.json({result: false})
   }
 })
 
 // Récupération des positions des users
-router.get('/users-position', function(req, res, next){
-  res.json()
+router.get('/users-position', async function(req, res, next){
+
+  var users = await userModel.find({
+    latitude: req.query.latitude,
+    longitude: req.query.longitude
+  })
+
+  if(!users){
+    res.json({result: false})
+  } else {
+    res.json({result: true, users})
+  }
+ 
 })
 
 // Récupération des notes 
@@ -116,8 +130,22 @@ router.put('/settings', function(req, res, next){
 })
 
 // Ecrire une review
-router.post('/add-review', function(req, res, next){
-  res.json()
+router.post('/add-review', async function(req, res, next){
+
+ var user = await userModel.findById(req.body.receiverid)
+
+ var newReview = await reviewModel ({
+  id_sender : req.body.senderid,
+  pseudo_sender : req.body.pseudo,
+  id_receiver : req.body.receiverid,
+  message : req.body.message,
+  rate : req.body.rate,
+})
+var reviewSaved =  await newReview.save()
+  user.reviews.push(reviewSaved.id)
+  var userSaved = user.save();
+
+  res.json({result:true, newReview, userSaved})
 })
 
 
