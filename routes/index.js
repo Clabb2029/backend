@@ -13,16 +13,40 @@ var router = express.Router();
 // Création d'un compte 
 
 router.post('/signup', async function(req, res, next) {
-  var token = req.body.token;
-  var pseudo = req.body.pseudo;
-  var email = req.body.email;
-  var password = req.body.password
+  // var token = req.body.token;
+  // var pseudo = req.body.pseudo;
+  // var email = req.body.email;
+  // var password = req.body.password
 
-  if (!token || !pseudo || !email || !password) {
-    res.json({result: false})
-  } else {
-    res.json({result: true})
-  }
+  var newUser = await userModel({
+    address: {
+      zipcode : req.body.zipcode,
+      city : req.body.city,
+      latitude : req.body.latitude,
+      longitude : req.body.longitude
+    },
+  pseudo : req.body.pseudo,
+  email : req.body.email,
+  optinEmails : req.body.optinEmails,
+  password : req.body.password,
+  avatar : req.body.avatar,
+  livingPlace : req.body.livingPlace,
+  status : req.body.status,
+  petChoice : [req.body.petChoice],
+  description : req.body.description,
+  guardType : req.body.guardType,
+  })
+
+  var userSaved = await newUser.save();
+
+  res.json({result:true, userSaved})
+
+
+  // if (!token || !pseudo || !email || !password) {
+  //   res.json({result: false})
+  // } else {
+  //   res.json({result: true})
+  // }
 });
 
 
@@ -48,8 +72,10 @@ router.get('/users/:userID', async function(req, res, next) {
   
   if(userid){
     var userReviews = await userModel.findById(req.params.userID).populate('reviews').exec();
-    res.json({userInfo : userReviews, reviews: userReviews.reviews})
-    console.log(userReviews)
+    var reviewSender = await reviewModel.find({id_receiver: req.params.userID}).populate('id_sender').exec();
+
+    res.json({userInfo : userReviews, reviews: userReviews.reviews, reviewSender})
+    console.log(reviewSender)
   } else {
     res.json({result: false})
   }
@@ -112,13 +138,52 @@ router.post('/send-message', function(req, res, next){
 })
 
 // Récupération de l'agenda
-router.get('/agenda', function(req, res, next){
-  res.json()
+router.get('/agenda', async function(req, res, next){
+  var user = await userModel.findById('621e0150cf730fd82221b149')
+  
+  if(user){
+    var userAgenda = await agendaModel.find({id_receiver:"621e0150cf730fd82221b149" }).populate('id_sender').exec();
+    res.json({ result: true, agendaInfo:userAgenda})
+  } else {
+    res.json({result: false})  }
+})
+
+// Modification de l'agenda
+router.put('/agenda/', async function(req, res, next){
+  console.log(req.body)
+  agenda = await agendaModel.updateOne(
+    {_id : req.body.id},
+    {status: req.body.status})
+
+    agendaUpdate = await agendaModel.findById(req.body.id)
+    console.log(agenda.acknowledged)
+    if(agenda.acknowledged == true){
+      res.json({result:true, agendaUpdate })
+    } else {
+      res.json({result: false})
+    }
+  
 })
 
 // Ajouter un rendez-vous
-router.post('/add-date', function(req, res, next){
-  res.json()
+router.post('/add-date', async function(req, res, next){
+  var sitter = await userModel.findById(req.body.receiverid)
+  var owner = await userModel.findById(req.body.senderid)
+
+  var newDate = await agendaModel({
+    id_sender : req.body.senderid,
+    id_receiver : req.body.receiverid,
+    beginning : req.body.beginningdate,
+    ending : req.body.endingdate,
+    status : req.body.status
+  })
+  var newDateSaved = await newDate.save()
+
+  sitter.agenda.push(newDateSaved.id)
+  var sitterSaved = sitter.save()
+  owner.agenda.push(newDateSaved.id)
+  var ownerSaved = owner.save()
+  res.json({result:true, newDate, ownerSaved, sitterSaved})
 })
 
 // Modifier info d'un user 
@@ -129,20 +194,19 @@ router.put('/settings', function(req, res, next){
 // Ecrire une review
 router.post('/add-review', async function(req, res, next){
 
- var user = await userModel.findById(req.body.receiverid)
+ var user = await userModel.findById(req.body.id_receiver)
 
  var newReview = await reviewModel ({
-  id_sender : req.body.senderid,
-  pseudo_sender : req.body.pseudo,
-  id_receiver : req.body.receiverid,
+  id_sender : req.body.id_sender,
+  id_receiver : req.body.id_receiver,
   message : req.body.message,
   rate : req.body.rate,
 })
 var reviewSaved =  await newReview.save()
+
   user.reviews.push(reviewSaved.id)
   var userSaved = user.save();
-
-  res.json({result:true, newReview, userSaved})
+  res.json({result:true, reviewSaved, userSaved})
 })
 
 

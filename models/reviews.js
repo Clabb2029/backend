@@ -1,9 +1,8 @@
 var mongoose = require('mongoose');
 
 var reviewSchema = mongoose.Schema({
-    id_sender : String,
-    pseudo_sender : String,
-    id_receiver : String,
+    id_sender : {type: mongoose.Schema.Types.ObjectId, ref:'users'},
+    id_receiver : {type: mongoose.Schema.Types.ObjectId, ref:'users'},
     message : String,
     rate : Number,
 })
