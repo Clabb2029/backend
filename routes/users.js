@@ -7,7 +7,7 @@ const userModel = require('../models/users');
 
 /* GET users listing. avant le prefixe users et ça marchait très bien */
 router.post('/signup', async(req, res) => {
-  const { 
+const { 
           pseudo,
           email, 
           password,
@@ -30,16 +30,8 @@ router.post('/signup', async(req, res) => {
   const hashedPassword = await bcrypt.hashSync(password, salt)
 
   //And then create the user: 
-  const user = await userModel.create({
-          
-          pseudo,
-          email, 
-          optinEmails,
-          guardType,
-          password: hashedPassword
-  })
-
-  if(user) {
+ 
+  if(saveUser) {
 
       res.status(201).json(
           {
@@ -54,12 +46,12 @@ router.post('/signup', async(req, res) => {
   
   } else {
           res.status(404)
-          throw new Error('Les informations invalides!')
+          throw new Error('Les informations sont invalides!')
       }
  
 });
 
-router.put('/signup-more/:id', async(req, res) => {
+/*router.put('/users/signup-more', async(req, res) => {
   const { 
       livingPlace, 
       petChoice,
@@ -67,12 +59,12 @@ router.put('/signup-more/:id', async(req, res) => {
     } = req.body
 
 
-  const userExist = await userModel.findById(req.params.id);
+  const userExist = await userModel.findById(req.body.id);
     //check if user exist
-    /*if(!userExist) {
+    if(!userExist) {
         res.status(401)
         throw new Error('User not found')
-    }*/
+    }
 
     const updateUser = await userExist.findByIdAndUpdate(req.params.id,
       {
@@ -82,9 +74,9 @@ router.put('/signup-more/:id', async(req, res) => {
       , {new: true})
       
     res.status(200).json(updateUser) 
-})
+})*/
 
-router.post('/signin', async (req, res) => {
+router.post('/users/signin', async (req, res) => {
   const {email, password} = req.body;
 
   //check for the user email
