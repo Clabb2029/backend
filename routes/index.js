@@ -6,7 +6,6 @@ var router = express.Router();
 const dotenv = require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const userModel = require('../models/users');
 // /* GET home page. */
 // router.get('/', function(req, res, next) {
 //   res.render('index', { title: 'Express' });
@@ -154,12 +153,13 @@ router.get('/agenda', async function(req, res, next){
 // Modification de l'agenda
 router.put('/agenda/', async function(req, res, next){
   console.log(req.body)
+
   agenda = await agendaModel.updateOne(
     {_id : req.body.id},
     {status: req.body.status})
 
-    agendaUpdate = await agendaModel.findById(req.body.id)
-    console.log(agenda.acknowledged)
+    agendaUpdate = await agendaModel.findById(req.body.id).populate('id_sender').exec();
+
     if(agenda.acknowledged == true){
       res.json({result:true, agendaUpdate })
     } else {
