@@ -86,15 +86,19 @@ router.get('/users/:userID', async function(req, res, next) {
 // Récupération des positions des users
 router.get('/users-position', async function(req, res, next){
 
-  var users = await userModel.find({
-    latitude: req.query.latitude,
-    longitude: req.query.longitude
+  // var users = await userModel.find({
+  //   latitude: req.query.latitude,
+  //   longitude: req.query.longitude
+  // })
+
+  var usersOwner = await userModel.find({
+    status: "Faire garder"
   })
 
-  if(!users){
+  if(!usersOwner){
     res.json({result: false})
   } else {
-    res.json({result: true, users})
+    res.json({result: true, usersOwner})
   }
  
 })
