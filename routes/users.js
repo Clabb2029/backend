@@ -1,20 +1,23 @@
 var express = require('express');
 var router = express.Router();
 const dotenv = require('dotenv').config();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+
+var uid2 = require('uid2')
+var bcrypt = require('bcrypt');
+
 const userModel = require('../models/users');
 
 /* GET users listing. avant le prefixe users et ça marchait très bien */
-router.post('/signup', async(req, res) => {
+router.post('/signup', async (req, res) => {
 const { 
           pseudo,
           email, 
           password,
           optinEmails,
-          guardType,
+          status,
         } = req.body
 
+        console.log(req.body)
   if(!pseudo || !email || !password) {
       res.status(400)
       throw new Error('Veuillez remplir tous les champs!')
@@ -26,21 +29,25 @@ const {
       throw new Error('Utisateur déjà existant!')
   }
   //hash password
-  const salt = await bcrypt.genSaltSync(10)
-  const hashedPassword = await bcrypt.hashSync(password, salt)
+  var hash = bcrypt.hashSync(password, 10);
 
   //And then create the user: 
- 
-  if(saveUser) {
+  var newUser = await userModel({
+    pseudo : pseudo,
+    email : email,
+    optinEmails : optinEmails,
+    password : hash,
+    status : status,
+    token: uid2(32),
+  })
+
+  var userSaved = await newUser.save();
+  if(userSaved) {
 
       res.status(201).json(
           {
-          _id: user.id,
-          pseudo,
-          email, 
-          optinEmails,
-          guardType,
-          token: generateToken(user._id)
+            token : userSaved.token,
+            result : true
           }
       )
   
@@ -51,31 +58,42 @@ const {
  
 });
 
-/*router.put('/users/signup-more', async(req, res) => {
+// Route sign-up more avec plus d'infos sur le user:
+
+router.put('/signup-more/:token', async(req, res) => {
+  console.log(req.body)
   const { 
+    zipcode,
+    city,
       livingPlace, 
       petChoice,
       guardType,
     } = req.body
 
 
-  const userExist = await userModel.findById(req.body.id);
+  const userExist = await userModel.find({token: req.params.token});
     //check if user exist
     if(!userExist) {
         res.status(401)
         throw new Error('User not found')
     }
 
-    const updateUser = await userExist.findByIdAndUpdate(req.params.id,
-      {
-        livingPlace, 
+    const updateUser = await userModel.updateOne({token: req.params.token},
+      {livingPlace, 
         petChoice,
-        guardType}
-      , {new: true})
+        guardType,
+        $push: { address: {
+          zipcode,
+          city
+        }}
+      }
+      )
+      console.log(updateUser)
       
-    res.status(200).json(updateUser) 
-})*/
+    res.status(200).json({result: true}) 
+})
 
+// Route Signin user :
 router.post('/users/signin', async (req, res) => {
   const {email, password} = req.body;
 
