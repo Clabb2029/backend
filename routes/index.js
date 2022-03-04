@@ -6,6 +6,10 @@ var router = express.Router();
 const dotenv = require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+// /* GET home page. */
+// router.get('/', function(req, res, next) {
+//   res.render('index', { title: 'Express' });
+// });
 
 
 // Création d'un compte 
@@ -82,15 +86,19 @@ router.get('/users/:userID', async function(req, res, next) {
 // Récupération des positions des users
 router.get('/users-position', async function(req, res, next){
 
-  var users = await userModel.find({
-    latitude: req.query.latitude,
-    longitude: req.query.longitude
+  // var users = await userModel.find({
+  //   latitude: req.query.latitude,
+  //   longitude: req.query.longitude
+  // })
+
+  var usersOwner = await userModel.find({
+    status: "Faire garder"
   })
 
-  if(!users){
+  if(!usersOwner){
     res.json({result: false})
   } else {
-    res.json({result: true, users})
+    res.json({result: true, usersOwner})
   }
  
 })
@@ -149,12 +157,13 @@ router.get('/agenda', async function(req, res, next){
 // Modification de l'agenda
 router.put('/agenda/', async function(req, res, next){
   console.log(req.body)
+
   agenda = await agendaModel.updateOne(
     {_id : req.body.id},
     {status: req.body.status})
 
-    agendaUpdate = await agendaModel.findById(req.body.id)
-    console.log(agenda.acknowledged)
+    agendaUpdate = await agendaModel.findById(req.body.id).populate('id_sender').exec();
+
     if(agenda.acknowledged == true){
       res.json({result:true, agendaUpdate })
     } else {
