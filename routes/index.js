@@ -1,4 +1,4 @@
-var express = require('express');
+var express = require('express')
 const userModel = require('../models/users');
 const agendaModel = require('../models/agenda')
 const reviewModel = require('../models/reviews')
@@ -6,10 +6,6 @@ var router = express.Router();
 const dotenv = require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-// /* GET home page. */
-// router.get('/', function(req, res, next) {
-//   res.render('index', { title: 'Express' });
-// });
 
 
 // Création d'un compte 
