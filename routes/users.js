@@ -17,16 +17,23 @@ router.post('/signup', async (req, res) => {
     result = false
   }
 
-  var userExist = await userModel.findOne({ email : req.body.email })
+  var userExist = await userModel.findOne({ email: req.body.email })
   if (userExist != null) {
     error = "email déjà utilisé";
     result = false
   }
-  //hash password
-  var hash = bcrypt.hashSync(req.body.password, 10);
 
+var emailregex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+var email = req.body.email
+if (emailregex.test(req.body.email) == false )
+{ result = false
+  error = "Veuillez saisir un email valide ! "}
   //And then create the user: 
-  if (userExist == null && req.body.pseudo!= '' && req.body.email != '' && req.body.password!= '') {
+  if (userExist == null && req.body.pseudo != '' && req.body.email != '' && req.body.password != '' && emailregex.test(req.body.email) == true ) {
+
+    //hash password
+    var hash = bcrypt.hashSync(req.body.password, 10);
+
     var newUser = await userModel({
       pseudo: req.body.pseudo,
       email: req.body.email,
@@ -54,63 +61,74 @@ router.post('/signup', async (req, res) => {
 
 router.put('/signup-more/:token', async (req, res) => {
   console.log(req.body)
-  const {
-    zipcode,
-    city,
-    livingPlace,
-    guardType,
-  } = req.body
+  const { zipcode, city, livingPlace, guardType } = req.body
 
+  if (zipcode == '' || city == '') {
 
-  const userExist = await userModel.find({ token: req.params.token });
-  //check if user exist
-  if (!userExist) {
-    res.status(401)
-    throw new Error('User not found')
+    error = 'Veuillez remplir tous les champs!'
+    result = false
+
+  } else {
+
+    const userExist = await userModel.find({ token: req.params.token });
+    //check if user exist
+    if (!userExist) {
+      res.status(401)
+      throw new Error('User not found')
+    } else {
+      result = true
+      const updateUser = await userModel.updateOne({ token: req.params.token },
+        {
+          livingPlace,
+          guardType,
+          $push: {
+            address: {
+              zipcode,
+              city
+            }
+          }
+        }
+      )
+    }
+
   }
 
-  const updateUser = await userModel.updateOne({ token: req.params.token },
-    {
-      livingPlace,
-      guardType,
-      $push: {
-        address: {
-          zipcode,
-          city
-        }
-      }
-    }
-  )
-  console.log(updateUser)
-
-  res.status(200).json({ result: true })
+  res.json({
+    error,
+    result
+  })
 })
 
 // Route Signin user :
-router.post('/users/signin', async (req, res) => {
+router.post('/signin', async (req, res) => {
+  var error = '';
+  var result = false;
+
   const { email, password } = req.body;
 
-  //check for the user email
+  if (email == '' || password == '') {
+    error = 'Veuillez remplir tous les champs!'
 
-  const user = await userModel.findOne({ email })
+    res.json({ error, result })
 
-  if (user && (await bcrypt.compare(password, user.password))) {
-    res.json({
-      _id: user.id,
-      email: user.email,
-      token: generateToken(user._id)
-    })
   } else {
-    res.status(404)
-    throw new Error('Informations invalides')
+    //check for the user email
+    const user = await userModel.findOne({ email })
+
+    if (user) {
+      if (bcrypt.compareSync(password, user.password)) {
+        result = true
+      } else {
+        error = 'Mot de passe incorrect'
+      }
+    } else {
+      error = 'Email non present'
+    }
+
+    res.json({ error, result, user })
   }
 
-  res.json({ message: 'Login User' })
 })
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, `${process.env.JWT_SECRET}`, {
-    expiresIn: "30d",
-  })
-}
+
 module.exports = router;
