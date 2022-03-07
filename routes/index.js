@@ -92,7 +92,7 @@ router.get('/users-position', async function(req, res, next){
   // })
 
   var usersOwner = await userModel.find({
-    status: "Faire garder"
+    status: false
   })
 
   if(!usersOwner){
@@ -144,11 +144,11 @@ router.post('/send-message', function(req, res, next){
 })
 
 // Récupération de l'agenda
-router.get('/agenda', async function(req, res, next){
-  var user = await userModel.findById('621e0150cf730fd82221b149')
+router.get('/agenda/:token', async function(req, res, next){
+  var user = await userModel.find({token : req.params.token})
   
   if(user){
-    var userAgenda = await agendaModel.find({id_receiver:"621e0150cf730fd82221b149" }).populate('id_sender').exec();
+    var userAgenda = await agendaModel.find({id_receiver: user._id }).populate('id_sender').exec();
     res.json({ result: true, agendaInfo:userAgenda})
   } else {
     res.json({result: false})  }
