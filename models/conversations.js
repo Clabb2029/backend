@@ -1,15 +1,19 @@
 var mongoose = require('mongoose');
 
 var messageSchema = mongoose.Schema({
-    senderName : String,
+    sender : {type: mongoose.Schema.Types.ObjectId, ref:'users'},
     message : String,
     timestamp : Date,
     read : Boolean,
 })
 
+var participantsSchema = mongoose.Schema({
+    user1 : {type: mongoose.Schema.Types.ObjectId, ref:'users'},
+    user2: {type: mongoose.Schema.Types.ObjectId, ref:'users'}
+})
+
 var conversationSchema = mongoose.Schema({
-    id_sender : String,
-    id_receiver : String,
+    participants: [participantsSchema],
     message : [messageSchema]
 })
 

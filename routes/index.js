@@ -2,6 +2,8 @@ var express = require('express')
 const userModel = require('../models/users');
 const agendaModel = require('../models/agenda')
 const reviewModel = require('../models/reviews')
+const conversationModel = require('../models/conversations')
+
 var router = express.Router();
 const dotenv = require('dotenv').config();
 const jwt = require('jsonwebtoken');
@@ -139,8 +141,31 @@ router.get('/chat', function(req, res, next){
 })
 
 // Envoi d'un message
-router.post('/send-message', function(req, res, next){
-  res.json()
+router.post('/send-message', async function (req, res, next){
+
+  console.log(req.body)
+
+  var newConversation = await conversationModel ({
+    participants: [
+      {
+        user1: req.body.participant1, 
+        user2: req.body.participant2
+      }
+    ],
+    message: [
+      {
+        sender : req.body.participant2,
+        message : req.body.message,
+        timestamp : req.body.createdAt,
+        read : false
+      }
+    ]    
+})
+
+  var newConversationSaved = await newConversation.save() 
+  console.log("voici le nouveau message : ", newConversationSaved)
+
+  res.json({result: true})
 })
 
 // Récupération de l'agenda
