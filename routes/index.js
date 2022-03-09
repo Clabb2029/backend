@@ -107,10 +107,6 @@ router.get('/users-position', async function(req, res, next){
  
 })
 
-// Récupération des notes 
-router.get('/rate', function(req, res, next){
-  res.json()
-})
 
 // Ajout d'un favoris
 router.post('/add-favorite/:token', async function(req, res, next){
@@ -341,11 +337,6 @@ router.post('/add-date', async function(req, res, next){
   owner.agenda.push(newDateSaved.id)
   var ownerSaved = owner.save()
   res.json({result:true, newDate, ownerSaved, sitterSaved})
-})
-
-// Modifier info d'un user 
-router.put('/settings', function(req, res, next){
-  res.json()
 })
 
 // Ecrire une review
