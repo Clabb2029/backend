@@ -7,13 +7,10 @@ var messageSchema = mongoose.Schema({
     read : Boolean,
 })
 
-var participantsSchema = mongoose.Schema({
-    user1 : {type: mongoose.Schema.Types.ObjectId, ref:'users'},
-    user2: {type: mongoose.Schema.Types.ObjectId, ref:'users'}
-})
 
 var conversationSchema = mongoose.Schema({
-    participants: [participantsSchema],
+    id_user1: {type: mongoose.Schema.Types.ObjectId, ref:'users'},
+    id_user2: {type: mongoose.Schema.Types.ObjectId, ref:'users'},
     message : [messageSchema]
 })
 
