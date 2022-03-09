@@ -2,6 +2,8 @@ var express = require('express')
 const userModel = require('../models/users');
 const agendaModel = require('../models/agenda')
 const reviewModel = require('../models/reviews')
+const conversationModel = require('../models/conversations')
+
 var router = express.Router();
 const dotenv = require('dotenv').config();
 const jwt = require('jsonwebtoken');
@@ -177,13 +179,37 @@ var userFavorites = await userModel.findOne({token : req.params.token})
 })
 
 // Récupération des conversations
-router.get('/conversations', function(req, res, next){
-  res.json()
+router.get('/conversations/:userID', async function(req, res, next){
+
+  var currentUserID = req.params.userID
+
+  var currentUser = await userModel.findById(currentUserID).populate('conversations').exec();
+  var currentUserConversations = currentUser.conversations
+
+  console.log("liste des conversations de l'user : ", currentUserConversations)
+
+  var otherUsers = []
+
+  for (var i=0 ; i<currentUserConversations.length ; i++){
+    if (currentUserConversations[i].id_user1 !== currentUserID) {
+      otherUsers.push(currentUserConversations[i].id_user1)
+    
+    } else if (currentUserConversations[i].id_user2 !== currentUserID) {
+    otherUsers.push(currentUserConversations[i].id_user2)
+    }
+  }
+
+  console.log("tableau des ID des autres utilisateurs : ", otherUsers)
+
+  
+
+  res.json({result: true})
 })
 
 // Suppression d'une conversation 
 router.delete('/delete-conversation', function(req, res, next){
   res.json()
+
 })
 
 // Récupération d'un chat pour afficher les messages entre 2 users
@@ -192,8 +218,80 @@ router.get('/chat', function(req, res, next){
 })
 
 // Envoi d'un message
-router.post('/send-message', function(req, res, next){
-  res.json()
+router.post('/send-message', async function (req, res, next){
+
+  console.log(req.body);
+  const { id_sender, id_receiver, message, createdAt, read } = req.body
+ 
+  var conversationExists = await conversationModel.find({id_user1: id_sender, id_user2: id_receiver})
+  var conversationExists1 = await conversationModel.find({id_user1: id_receiver, id_user2: id_sender})
+  var sender = await userModel.findById(id_sender)
+  var receiver = await userModel.findById(id_receiver)
+
+  console.log("conversation exists : ", conversationExists)
+  console.log("conversation exists 1 : ", conversationExists1)
+
+
+  if (conversationExists.length === 0 && conversationExists1.length === 0 ) {
+    var newConversation = await conversationModel ({
+      id_user1: id_sender, 
+      id_user2: id_receiver,
+      message: [
+        {
+          sender : id_sender,
+          message : message,
+          timestamp : createdAt,
+          read : read
+        }
+      ]    
+    })
+
+    var newConversationSaved = await newConversation.save() 
+
+    sender.conversations.push(newConversationSaved)
+    var senderSave = sender.save()
+
+    receiver.conversations.push(newConversationSaved)
+    var receiverSave = receiver.save()
+
+    console.log("voici la nouvelle conversation : ", newConversationSaved)
+    res.json({result: true})
+
+
+  } else if (conversationExists.length > 0){
+
+    console.log("conversation exists : ", conversationExists)
+
+    conversationExists[0].message.push(
+      {
+        sender : id_sender,
+          message : message,
+          timestamp : createdAt,
+          read : read
+      }
+    )
+
+    await conversationExists[0].save()
+    console.log("voici la liste de messages mise à jour : ", conversationExists)
+    res.json({result: true})
+
+  } else if (conversationExists1.length > 0){
+
+    console.log("conversation exists : ", conversationExists1)
+
+    conversationExists1[0].message.push(
+      {
+        sender : id_sender,
+          message : message,
+          timestamp : createdAt,
+          read : read
+      }
+    )
+
+    await conversationExists1[0].save()
+    console.log("voici la liste de messages mise à jour : ", conversationExists1)
+    res.json({result: true})  
+  }
 })
 
 // Récupération de l'agenda
