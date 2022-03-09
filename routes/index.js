@@ -115,53 +115,63 @@ router.post('/add-favorite/:token', async function(req, res, next){
  
   result = false
   error = ''
+  favoriteExist = false
 
+  console.log(req.body)
   var user = await userModel.findOne({token : req.params.token})
 
+  console.log(user)
   for (var i = 0; i<user.favoriteUsers.length; i++){
     if (user.favoriteUsers[i].id_user === req.body.id_user){
-      error = 'Utilisateur déjà en favoris !'
-      result = false
-    }
-  else {
+      favoriteExist = true
+    }}
+if (favoriteExist == true){
+  error = 'Utilisateur déjà en favoris !'
+  result = false
+} else {
       user.favoriteUsers.push({
         id_user : req.body.id_user,
         pseudo : req.body.pseudo,
         avatar : req.body.avatar
       })
+      var userUpdated = user.save()
+      if (userUpdated){
+        result = true
+      }
     }
-    }
-  var userUpdated = user.save()
-if (userUpdated){
-  result = true
-}
+ 
  
   res.json({result, error})
 })
 
 // Suppression d'un favoris
-router.delete('/delete-favorite/:token', async function(req, res, next){
-
-  
-  var userExist = userModel.findOne({token: req.params.token})
+router.delete('/delete-favorite/:token/:favoriteID', async function(req, res, next){
+let result = false;
+    //Recherche du user
+  var userExist = await userModel.findOne({token: req.params.token})
   if (userExist){
+    // mise à jour du profil avec la suppression du favoris
   var userUpdate =  await userModel.updateOne({token : req.params.token},
       {$pull : {favoriteUsers :
-      { id_user: req.params.userID}
-    }})
+      { _id : req.params.favoriteID}
+    },
+  })
+  console.log(userUpdate)
+    }
+    // Si la mise à jour s'est bien faite, on récupère les infos du user à jour
+  if (userUpdate.modifiedCount == 1){
+    result = true;
+    userUpdate = await userModel.findOne({token: req.params.token})
   }
 
 
-  console.log(userUpdate)
-
-  res.json({userUpdate})
+  res.json({result, favoriteUpdate: userUpdate.favoriteUsers})
 })
 
 // Récupération des favoris
 router.get('/favorites/:token', async function(req, res, next){
 
 var userFavorites = await userModel.findOne({token : req.params.token}) 
-
 
   res.json({favoris: userFavorites.favoriteUsers})
 })
