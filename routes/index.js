@@ -8,6 +8,8 @@ var router = express.Router();
 const dotenv = require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+
+
 // /* GET home page. */
 // router.get('/', function(req, res, next) {
 //   res.render('index', { title: 'Express' });
@@ -79,7 +81,7 @@ router.get('/users/:userID', async function(req, res, next) {
     var reviewSender = await reviewModel.find({id_receiver: req.params.userID}).populate('id_sender').exec();
 
     res.json({userInfo : userReviews, reviews: userReviews.reviews, reviewSender})
-    console.log(reviewSender)
+
   } else {
     res.json({result: false})
   }
@@ -111,18 +113,59 @@ router.get('/rate', function(req, res, next){
 })
 
 // Ajout d'un favoris
-router.post('/add-favorite', function(req, res, next){
-  res.json()
+router.post('/add-favorite/:token', async function(req, res, next){
+ 
+  result = false
+  error = ''
+
+  var user = await userModel.findOne({token : req.params.token})
+
+  for (var i = 0; i<user.favoriteUsers.length; i++){
+    if (user.favoriteUsers[i].id_user === req.body.id_user){
+      error = 'Utilisateur déjà en favoris !'
+      result = false
+    }
+  else {
+      user.favoriteUsers.push({
+        id_user : req.body.id_user,
+        pseudo : req.body.pseudo,
+        avatar : req.body.avatar
+      })
+    }
+    }
+  var userUpdated = user.save()
+if (userUpdated){
+  result = true
+}
+ 
+  res.json({result, error})
 })
 
 // Suppression d'un favoris
-router.delete('/delete-favorite/', function(req, res, next){
-  res.json()
+router.delete('/delete-favorite/:token', async function(req, res, next){
+
+  
+  var userExist = userModel.findOne({token: req.params.token})
+  if (userExist){
+  var userUpdate =  await userModel.updateOne({token : req.params.token},
+      {$pull : {favoriteUsers :
+      { id_user: req.params.userID}
+    }})
+  }
+
+
+  console.log(userUpdate)
+
+  res.json({userUpdate})
 })
 
 // Récupération des favoris
-router.get('/favorites', function(req, res, next){
-  res.json()
+router.get('/favorites/:token', async function(req, res, next){
+
+var userFavorites = await userModel.findOne({token : req.params.token}) 
+
+
+  res.json({favoris: userFavorites.favoriteUsers})
 })
 
 // Récupération des conversations
@@ -254,7 +297,6 @@ router.get('/agenda/:token', async function(req, res, next){
 
 // Modification de l'agenda
 router.put('/agenda/', async function(req, res, next){
-  console.log(req.body)
 
   agenda = await agendaModel.updateOne(
     {_id : req.body.id},
