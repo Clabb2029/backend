@@ -102,9 +102,9 @@ router.post('/signup-more/:token', async (req, res) => {
 
       // Puis envoyer l'image sur Cloudinary et récupérer l'url dans la bdd
       if (!resultCopy) {
-        var resultCloudinary = await cloudinary.uploader.upload(imagePath, {folder: 'petfriends'});
+        var resultCloudinary = await cloudinary.uploader.upload(imagePath, { folder: 'petfriends' });
         userExist.avatar = resultCloudinary.url
-      // On sauvegarde ensuite le user mis à jour avec les dernières infos  
+        // On sauvegarde ensuite le user mis à jour avec les dernières infos  
         var userUpdated = await userExist.save()
 
         if (userUpdated) {
@@ -120,7 +120,7 @@ router.post('/signup-more/:token', async (req, res) => {
     }
 
     res.json({ result, error })
-   
+
     fs.unlinkSync(imagePath)
 
   }
@@ -160,5 +160,22 @@ router.post('/signin', async (req, res) => {
 
 })
 
+// Route pour modifier info d'un user via SettingsScreen :
+router.put('/settings/:token', async function (req, res, next) {
+  var error = '';
+  var result = false;
+
+  var userData = JSON.parse(req.body.userInfo)
+
+  var userExist = await userModel.findOne({ token: req.params.token });
+  //check if user exist
+
+
+  // Modifier seulement les champs non vide ! 
+  
+  res.json({ result, error })
+
+
+})
 
 module.exports = router;
