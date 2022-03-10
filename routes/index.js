@@ -292,10 +292,10 @@ router.post('/send-message', async function (req, res, next){
 
 // Récupération de l'agenda
 router.get('/agenda/:token', async function(req, res, next){
-  var user = await userModel.find({token : req.params.token})
-  
-  if(user){
-    var userAgenda = await agendaModel.find({id_receiver: user._id }).populate('id_sender').exec();
+  var userExist = await userModel.findOne({token : req.params.token})
+
+  if(userExist){
+    var userAgenda = await agendaModel.find({id_receiver: userExist._id }).populate('id_sender').exec();
     res.json({ result: true, agendaInfo:userAgenda})
   } else {
     res.json({result: false})  }
