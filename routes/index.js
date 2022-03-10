@@ -179,27 +179,33 @@ router.get('/conversations/:userID', async function(req, res, next){
 
   var currentUserID = req.params.userID
 
+  // Je cherche à avoir le modèle de notre utilisateur avec ses conversations qui s'affichent dans le tableau
   var currentUser = await userModel.findById(currentUserID).populate('conversations').exec();
   var currentUserConversations = currentUser.conversations
 
-  console.log("liste des conversations de l'user : ", currentUserConversations)
+  // console.log("id de l'user actuel : ", currentUser._id)
+  // console.log("liste des conversations de l'user : ", currentUserConversations)
 
+  // Je veux récupérer les ID des autres en comparant mon ID à ceux dans les conversations, 
+  // mais le if ne fonctionne pas, donc ça push mon ID dans le tableau qui doit recevoir ceux des autres
   var otherUsers = []
 
   for (var i=0 ; i<currentUserConversations.length ; i++){
-    if (currentUserConversations[i].id_user1 !== currentUserID) {
+
+    // console.log("user 1 :", currentUserConversations[i].id_user1, "user 2 : ", currentUserConversations[i].id_user2)
+
+    if (currentUserConversations[i].id_user1 != currentUser._id) {
       otherUsers.push(currentUserConversations[i].id_user1)
     
-    } else if (currentUserConversations[i].id_user2 !== currentUserID) {
+    } else if (currentUserConversations[i].id_user2 != currentUser._id) {
     otherUsers.push(currentUserConversations[i].id_user2)
     }
   }
 
-  console.log("tableau des ID des autres utilisateurs : ", otherUsers)
+  // Ce log affiche donc le tableau mal rempli ...
+  // console.log("tableau des ID des autres utilisateurs : ", otherUsers)
 
-  
-
-  res.json({result: true})
+  res.json({otherUsers})
 })
 
 // Suppression d'une conversation 
